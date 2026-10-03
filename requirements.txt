@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+langgraph
+mcp<2
+tavily-python

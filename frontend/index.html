@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Trip Planner — AI Multi-Agent Travel Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d131a;
+      --card-bg: rgba(22, 31, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --input-bg: #141e29;
+      --ink: #f0f4f8;
+      --mute: #94a3b8;
+      --accent: #0ea5e9;
+      --accent-glow: rgba(14, 165, 233, 0.25);
+      --accent-hover: #0284c7;
+      --emerald: #10b981;
+      --emerald-bg: rgba(16, 185, 129, 0.12);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.12);
+      --rose: #f43f5e;
+      --rose-bg: rgba(244, 63, 94, 0.12);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(at 15% 15%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
+        radial-gradient(at 85% 85%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+      min-height: 100vh;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin: 0 0 10px;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.03em;
+    }
+
+    p.sub {
+      color: var(--mute);
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--mute);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    input, select {
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 12px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--ink);
+      transition: all 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .form-submit {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+    }
+
+    button.btn-primary {
+      width: 100%;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, var(--accent) 0%, #3b82f6 100%);
+      color: #fff;
+      border: 0;
+      border-radius: 10px;
+      padding: 14px 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button.btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+    }
+
+    button.btn-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Results styling */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .badge-success { background: var(--emerald-bg); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-warn { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-danger { background: var(--rose-bg); color: var(--rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+
+    .header-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      margin: 0;
+    }
+
+    .meta-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0 20px;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+
+    .day-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      margin-bottom: 14px;
+      border-radius: 0 10px 10px 0;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .day-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .weather-tag {
+      font-size: 0.85rem;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+
+    .activity-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .activity-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+    }
+
+    .swap-note {
+      font-size: 0.8rem;
+      color: var(--amber);
+      display: block;
+      margin-top: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    td:last-child {
+      text-align: right;
+      font-weight: 600;
+    }
+
+    tr.total td {
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-bottom: none;
+      border-top: 2px solid var(--card-border);
+      color: #38bdf8;
+    }
+
+    a.link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    a.link-btn:hover {
+      text-decoration: underline;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Smart Trip Planner</h1>
+      <p class="sub">Autonomous Multi-Agent Itinerary, Weather, Currency & Budget Planner</p>
+    </header>
+
+    <div class="card">
+      <form id="f">
+        <label>
+          Destination
+          <select name="destination" id="destSelect">
+            <option value="Singapore">Singapore 🇸🇬</option>
+            <option value="Bangkok">Bangkok 🇹🇭</option>
+            <option value="Tokyo">Tokyo 🇯🇵</option>
+            <option value="Dubai">Dubai 🇦🇪</option>
+            <option value="Paris">Paris 🇫🇷</option>
+            <option value="Bali">Bali 🇮🇩</option>
+            <option value="Munnar">Munnar 🇮🇳</option>
+            <option value="Goa">Goa 🇮🇳</option>
+          </select>
+        </label>
+        <label>
+          Flying from
+          <input name="origin" value="Chennai" required>
+        </label>
+        <label>
+          Start date
+          <input type="date" name="start_date" id="startDateInput" required>
+        </label>
+        <label>
+          Duration (Days)
+          <input type="number" name="days" min="1" max="14" value="4" required>
+        </label>
+        <label>
+          Budget
+          <input type="number" name="budget" min="1" value="80000" required>
+        </label>
+        <label>
+          Currency
+          <select name="currency">
+            <option value="INR">INR (₹)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+          </select>
+        </label>
+        <label>
+          Travellers
+          <input type="number" name="travellers" min="1" max="10" value="1" required>
+        </label>
+        <div class="form-submit">
+          <button type="submit" id="go" class="btn-primary">
+            <span>Generate Smart Itinerary</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="out" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    $('#startDateInput').value = tomorrow.toISOString().split('T')[0];
+
+    const money = (v, c) => {
+      try {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(v);
+      } catch {
+        return `${c} ${Math.round(v)}`;
+      }
+    };
+
+    $('#f').onsubmit = async e => {
+      e.preventDefault();
+      const b = $('#go');
+      b.disabled = true;
+      b.innerHTML = '<div class="spinner"></div><span>Running Multi-Agent Graph…</span>';
+      
+      const formData = new FormData(e.target);
+      const d = Object.fromEntries(formData);
+      for (const k of ['days', 'budget', 'travellers']) d[k] = d[k] ? Number(d[k]) : null;
+      if (!d.start_date) d.start_date = null;
+
+      try {
+        const res = await fetch('/api/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(d)
+        });
+        const r = await res.json();
+        render(r);
+      } catch (err) {
+        $('#out').innerHTML = '<div class="card"><p style="color:var(--rose)">Could not reach the planner. Check that the backend server is running.</p></div>';
+      } finally {
+        b.disabled = false;
+        b.innerHTML = '<span>Generate Smart Itinerary</span>';
+      }
+    };
+
+    function render(r) {
+      const o = $('#out');
+      if (r.needs_input) {
+        o.innerHTML = `
+          <div class="card">
+            <h2>Additional Details Needed</h2>
+            <ul>${r.needs_input.map(q => `<li>${esc(q)}</li>`).join('')}</ul>
+          </div>`;
+        return;
+      }
+
+      const c = r.cost.currency;
+      let h = `
+        <div class="card">
+          <div class="header-info">
+            <h2>${esc(r.title)}</h2>
+            <span class="badge ${r.within_budget ? 'badge-success' : 'badge-warn'}">
+              ${r.within_budget ? '✓ Within Budget' : '⚠ Exceeds Target Budget'}
+            </span>
+          </div>
+
+          <div class="meta-pills">
+            <span class="pill">✈ Flight: <strong>${esc(r.flight.airline)}</strong> (${esc(r.flight.stops)})</span>
+            <span class="pill">🏨 Hotel: <strong>${esc(r.hotel.name)}</strong> (${r.hotel.rating}★ · ${esc(r.hotel.tier)})</span>
+            <span class="pill">🔄 Agent Re-plans: <strong>${r.replans}</strong></span>
+          </div>
+      `;
+
+      if (r.warning) {
+        h += `<div class="badge badge-warn" style="margin-bottom:16px; width:100%; font-size:0.95rem; padding:10px;">${esc(r.warning)}</div>`;
+      }
+
+      h += `<h3>Day-by-Day Itinerary</h3>`;
+      h += r.itinerary.map(d => {
+        const w = d.weather ? ` · ${d.weather.tmin}–${d.weather.tmax}°C, 🌧 ${d.weather.rain_pct}% rain` : '';
+        return `
+          <div class="day-card">
+            <div class="day-header">
+              <span class="day-title">Day ${d.day} (${esc(d.date)})</span>
+              ${w ? `<span class="weather-tag">${esc(w)}</span>` : ''}
+            </div>
+            <ul class="activity-list">
+              ${d.items.map(i => `
+                <li class="activity-item">
+                  <div>
+                    <strong>${esc(i.name)}</strong>
+                    ${i.note ? `<span class="swap-note">⚡ ${esc(i.note)}</span>` : ''}
+                  </div>
+                  <span style="color:var(--mute); font-size:0.9rem;">${money(i.cost_inr, "INR")}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>`;
+      }).join('');
+
+      if (!r.weather_available) {
+        h += `<p style="font-size:0.85rem; color:var(--mute); margin-top:8px;">Note: Forecast is not available for dates beyond the 16-day window, so activities are not rain-adjusted.</p>`;
+      }
+      h += `</div>`; // Close itinerary card
+
+      // Cost & Hotels Card
+      h += `
+        <div class="card">
+          <h2>Cost Breakdown (${c})</h2>
+          <table>
+            ${Object.entries(r.cost.parts).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${money(v, c)}</td></tr>`).join('')}
+            <tr class="total">
+              <td>Total Estimated Cost</td>
+              <td>${money(r.cost.total, c)}</td>
+            </tr>
+          </table>
+          <p style="font-size:0.85rem; color:var(--mute);">FX Conversion Source: ${esc(r.cost.fx_source)}</p>
+      `;
+
+      if (r.cheaper_hotels && r.cheaper_hotels.length) {
+        h += `<h3 style="margin-top:20px;">Alternative Cheaper Hotels</h3><ul>` +
+          r.cheaper_hotels.map(x => `<li><strong>${esc(x.name)}</strong> (${x.rating}★) — ${money(x.price_converted, c)}/night</li>`).join('') +
+          `</ul>`;
+      }
+      h += `</div>`;
+
+      // Visa & Travel Information Card
+      h += `
+        <div class="card">
+          <h2>Visa & Travel Guidelines</h2>
+          <p>${esc(r.visa.text)}</p>
+          <p><a href="${esc(r.visa.source)}" target="_blank" rel="noopener" class="link-btn">🔗 Official Visa Portal & Rules</a></p>
+          
+          <div class="grid-2" style="margin-top:20px;">
+            <div>
+              <h3>Destination Guide</h3>
+              <p style="font-size:0.9rem; color:var(--mute);">${esc(r.guide.text)}</p>
+            </div>
+            <div>
+              <h3>Travel Insurance</h3>
+              <p style="font-size:0.9rem; color:var(--mute);">${esc(r.insurance.text)}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Live Events & Advisories
+      h += `
+        <div class="card">
+          <h2>Live Events & Advisories</h2>
+          ${r.advisories && r.advisories.length ? 
+            '<ul>' + r.advisories.map(a => `
+              <li style="margin-bottom:12px;">
+                <a href="${esc(a.url)}" target="_blank" rel="noopener" class="link-btn"><strong>${esc(a.title)}</strong></a>
+                <p style="font-size:0.85rem; color:var(--mute); margin:4px 0 0;">${esc(a.snippet)}</p>
+              </li>
+            `).join('') + '</ul>' 
+            : '<p style="font-size:0.9rem; color:var(--mute);">No live advisory results. (Add a TAVILY_API_KEY environment variable to enable live event searches).</p>'
+          }
+        </div>
+      `;
+
+      // Disclaimers
+      h += `
+        <div class="card" style="border-left:4px solid var(--amber);">
+          <h3 style="margin-top:0;">Important Disclaimers</h3>
+          <ul style="font-size:0.85rem; color:var(--mute); margin:0; padding-left:20px;">
+            ${r.disclaimers.map(x => `<li>${esc(x)}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      o.innerHTML = h;
+    }
+  </script>
+</body>
+</html>
